@@ -2,7 +2,7 @@ plugins {
     id 'java'
 }
 
-group = 'org.eflerrr'
+group = 'org.eflerrr.sfp'
 version = '0.0.1-SNAPSHOT'
 
 allprojects {

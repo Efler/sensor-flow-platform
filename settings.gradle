@@ -1,2 +1,5 @@
 rootProject.name = 'sensor-flow-platform'
 include 'core'
+include 'spark-jobs'
+include 'spark-jobs:alerter'
+findProject(':spark-jobs:alerter')?.name = 'alerter'

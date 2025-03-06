@@ -1,5 +1,9 @@
 todo.txt
 
+alerter/gradle
+alerter/.gradle
+alerter/build
+
 core/gradle
 core/.gradle
 core/build
