@@ -1,13 +1,7 @@
 todo.txt
 
-alerter/gradle
-alerter/.gradle
-alerter/build
-
-core/gradle
-core/.gradle
-core/build
-
+gradlew
+gradlew.bat
 .gradle
 gradle
 build/
