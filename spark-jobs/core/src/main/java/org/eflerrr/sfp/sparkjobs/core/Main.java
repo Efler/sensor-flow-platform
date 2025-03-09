@@ -1,4 +1,4 @@
-package org.eflerrr.sfp.sparkjobs;
+package org.eflerrr.sfp.sparkjobs.core;
 
 import org.apache.spark.sql.streaming.StreamingQueryException;
 
