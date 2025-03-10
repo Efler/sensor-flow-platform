@@ -1,111 +1,282 @@
 services:
 
+  # ----- zookeeper cluster (spark) -----
 
-  spark-master:
-    image: bitnami/spark:3.5
-    container_name: spark-master
+  zookeeper-spark-1:
+    image: confluentinc/cp-zookeeper:latest
+    container_name: zookeeper-spark-1
     ports:
-      - '7077:7077'
-      - '8088:8080'
-      - '5055:6066'
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_SERVER_ID: 1
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_SERVERS: zookeeper-spark-1:22888:23888;zookeeper-spark-2:22888:23888;zookeeper-spark-3:22888:23888
+      KAFKA_OPTS: -Dzookeeper.4lw.commands.whitelist=*
+    networks:
+      - sensor-flow-platform-network
+
+  zookeeper-spark-2:
+    image: confluentinc/cp-zookeeper:latest
+    container_name: zookeeper-spark-2
+    ports:
+      - "2182:2181"
+    environment:
+      ZOOKEEPER_SERVER_ID: 2
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_SERVERS: zookeeper-spark-1:22888:23888;zookeeper-spark-2:22888:23888;zookeeper-spark-3:22888:23888
+      KAFKA_OPTS: -Dzookeeper.4lw.commands.whitelist=*
+    networks:
+      - sensor-flow-platform-network
+
+  zookeeper-spark-3:
+    image: confluentinc/cp-zookeeper:latest
+    container_name: zookeeper-spark-3
+    ports:
+      - "2183:2181"
+    environment:
+      ZOOKEEPER_SERVER_ID: 3
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_SERVERS: zookeeper-spark-1:22888:23888;zookeeper-spark-2:22888:23888;zookeeper-spark-3:22888:23888
+      KAFKA_OPTS: -Dzookeeper.4lw.commands.whitelist=*
+    networks:
+      - sensor-flow-platform-network
+
+
+  # ----- spark cluster -----
+
+  spark-master-1:
+    image: bitnami/spark:3.5
+    container_name: spark-master-1
+    ports:
+      - '7071:7077'
+      - '8181:8080'
+      - '5051:6066'
     environment:
       - SPARK_MODE=master
       - SPARK_RPC_AUTHENTICATION_ENABLED=no
       - SPARK_RPC_ENCRYPTION_ENABLED=no
       - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
       - SPARK_SSL_ENABLED=no
-      - SPARK_USER=spark
-    networks:
-      - sensor-flow-platform-network
+      - SPARK_USER=spark_master_1_user
+      - SPARK_DAEMON_USER=root
+      - SPARK_MASTER_HOST=spark-master-1
+      - SPARK_MASTER_URL=spark://spark-master-1:7077
+      - SPARK_DAEMON_JAVA_OPTS=-Dspark.deploy.recoveryMode=ZOOKEEPER -Dspark.deploy.zookeeper.url=zookeeper-spark-1:2181,zookeeper-spark-2:2181,zookeeper-spark-3:2181 -Dspark.deploy.zookeeper.dir=/spark
     volumes:
       - ./spark-jobs/volume-jar:/opt/spark-jobs
+    networks:
+      - sensor-flow-platform-network
+    depends_on:
+      - zookeeper-spark-1
+      - zookeeper-spark-2
+      - zookeeper-spark-3
 
+  spark-master-2:
+    image: bitnami/spark:3.5
+    container_name: spark-master-2
+    ports:
+      - '7072:7077'
+      - '8182:8080'
+      - '5052:6066'
+    environment:
+      - SPARK_MODE=master
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+      - SPARK_SSL_ENABLED=no
+      - SPARK_USER=spark_master_2_user
+      - SPARK_DAEMON_USER=root
+      - SPARK_MASTER_HOST=spark-master-2
+      - SPARK_MASTER_URL=spark://spark-master-2:7077
+      - SPARK_DAEMON_JAVA_OPTS=-Dspark.deploy.recoveryMode=ZOOKEEPER -Dspark.deploy.zookeeper.url=zookeeper-spark-1:2181,zookeeper-spark-2:2181,zookeeper-spark-3:2181 -Dspark.deploy.zookeeper.dir=/spark
+    volumes:
+      - ./spark-jobs/volume-jar:/opt/spark-jobs
+    networks:
+      - sensor-flow-platform-network
+    depends_on:
+      - zookeeper-spark-1
+      - zookeeper-spark-2
+      - zookeeper-spark-3
 
   spark-worker-1:
     image: bitnami/spark:3.5
     container_name: spark-worker-1
+    ports:
+      - '8281:8081'
+      - '4041:4040'
     environment:
       - SPARK_MODE=worker
-      - SPARK_MASTER_URL=spark://spark-master:7077
+      - SPARK_MASTER_URL=spark://spark-master-1:7077,spark-master-2:7077
       - SPARK_WORKER_MEMORY=1g
       - SPARK_WORKER_CORES=2
       - SPARK_RPC_AUTHENTICATION_ENABLED=no
       - SPARK_RPC_ENCRYPTION_ENABLED=no
       - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
       - SPARK_SSL_ENABLED=no
-      - SPARK_USER=spark
-    depends_on:
-      - spark-master
+      - SPARK_USER=spark_worker_1_user
+      - SPARK_DAEMON_USER=root
+    volumes:
+      - ./spark-jobs/volume-jar:/opt/spark-jobs
     networks:
       - sensor-flow-platform-network
-
+    depends_on:
+      - spark-master-1
+      - spark-master-2
 
   spark-worker-2:
     image: bitnami/spark:3.5
     container_name: spark-worker-2
+    ports:
+      - '8282:8081'
+      - '4042:4040'
     environment:
       - SPARK_MODE=worker
-      - SPARK_MASTER_URL=spark://spark-master:7077
+      - SPARK_MASTER_URL=spark://spark-master-1:7077,spark-master-2:7077
       - SPARK_WORKER_MEMORY=1g
       - SPARK_WORKER_CORES=2
       - SPARK_RPC_AUTHENTICATION_ENABLED=no
       - SPARK_RPC_ENCRYPTION_ENABLED=no
       - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
       - SPARK_SSL_ENABLED=no
-      - SPARK_USER=spark
+      - SPARK_USER=spark_worker_2_user
+      - SPARK_DAEMON_USER=root
+    volumes:
+      - ./spark-jobs/volume-jar:/opt/spark-jobs
+    networks:
+      - sensor-flow-platform-network
     depends_on:
-      - spark-master
-    networks:
-      - sensor-flow-platform-network
+      - spark-master-1
+      - spark-master-2
 
-
-  zookeeper:
-    image: bitnami/zookeeper:latest
-    container_name: zookeeper
+  spark-worker-3:
+    image: bitnami/spark:3.5
+    container_name: spark-worker-3
     ports:
-      - "2181:2181"
+      - '8283:8081'
+      - '4043:4040'
     environment:
-      - ALLOW_ANONYMOUS_LOGIN=yes
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://spark-master-1:7077,spark-master-2:7077
+      - SPARK_WORKER_MEMORY=1g
+      - SPARK_WORKER_CORES=2
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+      - SPARK_SSL_ENABLED=no
+      - SPARK_USER=spark_worker_3_user
+      - SPARK_DAEMON_USER=root
+    volumes:
+      - ./spark-jobs/volume-jar:/opt/spark-jobs
+    networks:
+      - sensor-flow-platform-network
+    depends_on:
+      - spark-master-1
+      - spark-master-2
+
+
+  # ----- zookeeper cluster (kafka) -----
+
+  zookeeper-kafka-1:
+    image: confluentinc/cp-zookeeper:latest
+    container_name: zookeeper-kafka-1
+    ports:
+      - "2281:2181"
+    environment:
+      ZOOKEEPER_SERVER_ID: 1
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_SERVERS: zookeeper-kafka-1:22888:23888;zookeeper-kafka-2:22888:23888;zookeeper-kafka-3:22888:23888
+      KAFKA_OPTS: -Dzookeeper.4lw.commands.whitelist=*
+    networks:
+      - sensor-flow-platform-network
+
+  zookeeper-kafka-2:
+    image: confluentinc/cp-zookeeper:latest
+    container_name: zookeeper-kafka-2
+    ports:
+      - "2282:2181"
+    environment:
+      ZOOKEEPER_SERVER_ID: 2
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_SERVERS: zookeeper-kafka-1:22888:23888;zookeeper-kafka-2:22888:23888;zookeeper-kafka-3:22888:23888
+      KAFKA_OPTS: -Dzookeeper.4lw.commands.whitelist=*
+    networks:
+      - sensor-flow-platform-network
+
+  zookeeper-kafka-3:
+    image: confluentinc/cp-zookeeper:latest
+    container_name: zookeeper-kafka-3
+    ports:
+      - "2283:2181"
+    environment:
+      ZOOKEEPER_SERVER_ID: 3
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_SERVERS: zookeeper-kafka-1:22888:23888;zookeeper-kafka-2:22888:23888;zookeeper-kafka-3:22888:23888
+      KAFKA_OPTS: -Dzookeeper.4lw.commands.whitelist=*
     networks:
       - sensor-flow-platform-network
 
 
-  broker-1:
+  # ----- kafka cluster -----
+
+  kafka-broker-1:
     image: bitnami/kafka:latest
-    container_name: broker-1
+    container_name: kafka-broker-1
     ports:
-      - "9092:9092"
-      - "9093:9093"
+      - "9192:9192"
+      - "9193:9193"
     environment:
-      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper-kafka-1:2181,zookeeper-kafka-2:2181,zookeeper-kafka-3:2181
       - ALLOW_PLAINTEXT_LISTENER=yes
       - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CLIENT:PLAINTEXT,EXTERNAL:PLAINTEXT
-      - KAFKA_CFG_LISTENERS=CLIENT://:9092,EXTERNAL://:9093
-      - KAFKA_CFG_ADVERTISED_LISTENERS=CLIENT://broker-1:9092,EXTERNAL://localhost:9093
+      - KAFKA_CFG_LISTENERS=CLIENT://:9192,EXTERNAL://:9193
+      - KAFKA_CFG_ADVERTISED_LISTENERS=CLIENT://kafka-broker-1:9192,EXTERNAL://localhost:9193
       - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=CLIENT
-    depends_on:
-      - zookeeper
     networks:
       - sensor-flow-platform-network
+    depends_on:
+      - zookeeper-kafka-1
+      - zookeeper-kafka-2
+      - zookeeper-kafka-3
 
-
-  broker-2:
+  kafka-broker-2:
     image: bitnami/kafka:latest
-    container_name: broker-2
+    container_name: kafka-broker-2
     ports:
-      - "9094:9094"
-      - "9095:9095"
+      - "9292:9292"
+      - "9293:9293"
     environment:
-      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper-kafka-1:2181,zookeeper-kafka-2:2181,zookeeper-kafka-3:2181
       - ALLOW_PLAINTEXT_LISTENER=yes
       - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CLIENT:PLAINTEXT,EXTERNAL:PLAINTEXT
-      - KAFKA_CFG_LISTENERS=CLIENT://:9094,EXTERNAL://:9095
-      - KAFKA_CFG_ADVERTISED_LISTENERS=CLIENT://broker-2:9094,EXTERNAL://localhost:9095
+      - KAFKA_CFG_LISTENERS=CLIENT://:9292,EXTERNAL://:9293
+      - KAFKA_CFG_ADVERTISED_LISTENERS=CLIENT://kafka-broker-2:9292,EXTERNAL://localhost:9293
       - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=CLIENT
-    depends_on:
-      - zookeeper
     networks:
       - sensor-flow-platform-network
+    depends_on:
+      - zookeeper-kafka-1
+      - zookeeper-kafka-2
+      - zookeeper-kafka-3
+
+  kafka-broker-3:
+    image: bitnami/kafka:latest
+    container_name: kafka-broker-3
+    ports:
+      - "9392:9392"
+      - "9393:9393"
+    environment:
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper-kafka-1:2181,zookeeper-kafka-2:2181,zookeeper-kafka-3:2181
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CLIENT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      - KAFKA_CFG_LISTENERS=CLIENT://:9392,EXTERNAL://:9393
+      - KAFKA_CFG_ADVERTISED_LISTENERS=CLIENT://kafka-broker-3:9392,EXTERNAL://localhost:9393
+      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=CLIENT
+    networks:
+      - sensor-flow-platform-network
+    depends_on:
+      - zookeeper-kafka-1
+      - zookeeper-kafka-2
+      - zookeeper-kafka-3
 
 
 networks:

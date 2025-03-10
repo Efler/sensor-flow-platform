@@ -23,7 +23,7 @@ public class Core {
 
         Dataset<Row> kafkaStream = spark.readStream()
                 .format("kafka")
-                .option("kafka.bootstrap.servers", "broker-1:9092,broker-2:9092")
+                .option("kafka.bootstrap.servers", "kafka-broker-1:9192,kafka-broker-2:9292,kafka-broker-3:9392")
                 .option("subscribe", "sensors-data")
                 .option("startingOffsets", "earliest")
                 .load();
