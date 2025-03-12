@@ -14,7 +14,7 @@ shadowJar {
         attributes 'Main-Class': 'org.eflerrr.sfp.sparkjobs.core'
     }
     archiveFileName = 'core-fat.jar'
-    destinationDirectory.set(file("$rootDir/../volume-jar"))
+    destinationDirectory.set(file("$rootDir/../volume-jobs"))
 }
 
 group = 'org.eflerrr.sfp.sparkjobs.core'

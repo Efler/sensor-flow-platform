@@ -18,7 +18,7 @@ public class Core {
         SparkSession spark = SparkSession
                 .builder()
                 .appName("Sensors Streaming")
-                .config("spark.log.level", "WARN")
+                .config("spark.log.level", "INFO")
                 .getOrCreate();
 
         Dataset<Row> kafkaStream = spark.readStream()
@@ -35,12 +35,10 @@ public class Core {
                         .alias("data"))
                 .select("data.device_id");
 
-//        Dataset<Row> filteredData = parsedData
-//                .filter(col("metric_value").gt(100.0));
-
         StreamingQuery query = parsedData.writeStream()
                 .outputMode("append")
                 .format("console")
+                .option("checkpointLocation", "s3a://spark-bucket/checkpoints")
                 .start();
 
         query.awaitTermination();

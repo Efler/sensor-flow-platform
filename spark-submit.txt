@@ -1,0 +1,15 @@
+spark-submit \
+  --class org.eflerrr.sfp.sparkjobs.core.Main \
+  --master spark://spark-master-2:7077 \
+  --deploy-mode cluster \
+  --executor-memory 512m \
+  --total-executor-cores 5 \
+  --conf spark.hadoop.fs.s3a.endpoint=minio-proxy:9990 \
+  --conf spark.hadoop.fs.s3a.access.key=minioadmin \
+  --conf spark.hadoop.fs.s3a.secret.key=minioadmin \
+  --conf spark.hadoop.fs.s3a.path.style.access=true \
+  --conf spark.hadoop.fs.s3a.connection.ssl.enabled=false \
+  --conf spark.hadoop.fs.s3a.impl=org.apache.hadoop.fs.s3a.S3AFileSystem \
+  --conf spark.sql.adaptive.enabled=false \
+  --supervise \
+  ./../../spark-jobs/core-fat.jar
