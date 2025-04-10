@@ -11,24 +11,25 @@ java {
 
 shadowJar {
     manifest {
-        attributes 'Main-Class': 'org.eflerrr.sfp.sparkjobs.smth'
+        attributes 'Main-Class': 'org.eflerrr.sfp.sparkjobs.visualizer'
     }
-    archiveFileName = 'smth-fat.jar'
-    destinationDirectory.set(file("$rootDir/../volume-jar"))
+    archiveFileName = 'visualizer-fat.jar'
+    destinationDirectory.set(file("$rootDir/../volume-jobs"))
 }
 
-group = 'org.eflerrr.sfp.sparkjobs.smth'
+group = 'org.eflerrr.sfp.sparkjobs.visualizer'
 version = '0.0.1-SNAPSHOT'
 
 repositories {
     mavenCentral()
 }
 
+//noinspection KnownVulnerabilitiesInDependencies
 dependencies {
     compileOnly 'org.apache.spark:spark-core_2.12:3.5.4'
     compileOnly 'org.apache.spark:spark-sql_2.12:3.5.4'
     implementation 'org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.4'
-    runtimeOnly 'org.postgresql:postgresql:42.7.4'
+    implementation 'org.postgresql:postgresql:42.7.4'
 }
 
 test {

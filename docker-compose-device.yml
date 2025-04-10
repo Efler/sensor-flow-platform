@@ -1,0 +1,16 @@
+services:
+
+  # ----- device -----
+
+  device:
+    image: device:latest
+    container_name: device
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: "kafka-broker-1:9192,kafka-broker-2:9292,kafka-broker-3:9392"
+    networks:
+      - sensor-flow-platform-network
+
+
+networks:
+  sensor-flow-platform-network:
+    name: sensor-flow-platform-network

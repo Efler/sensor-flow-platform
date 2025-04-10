@@ -72,6 +72,8 @@ services:
       - zookeeper-spark-3
       - minio-client
       - minio-proxy
+      - timescaledb
+      - liquibase-migrations
 
   spark-master-2:
     image: bitnami/spark:3.5
@@ -101,6 +103,8 @@ services:
       - zookeeper-spark-3
       - minio-client
       - minio-proxy
+      - timescaledb
+      - liquibase-migrations
 
   spark-worker-1:
     image: bitnami/spark:3.5
@@ -283,38 +287,38 @@ services:
     ports:
       - "2281:2181"
     environment:
-      ZOOKEEPER_SERVER_ID: 1
+#      ZOOKEEPER_SERVER_ID: 1
       ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_SERVERS: zookeeper-kafka-1:22888:23888;zookeeper-kafka-2:22888:23888;zookeeper-kafka-3:22888:23888
+#      ZOOKEEPER_SERVERS: zookeeper-kafka-1:22888:23888;zookeeper-kafka-2:22888:23888;zookeeper-kafka-3:22888:23888
       KAFKA_OPTS: -Dzookeeper.4lw.commands.whitelist=*
     networks:
       - sensor-flow-platform-network
 
-  zookeeper-kafka-2:
-    image: confluentinc/cp-zookeeper:latest
-    container_name: zookeeper-kafka-2
-    ports:
-      - "2282:2181"
-    environment:
-      ZOOKEEPER_SERVER_ID: 2
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_SERVERS: zookeeper-kafka-1:22888:23888;zookeeper-kafka-2:22888:23888;zookeeper-kafka-3:22888:23888
-      KAFKA_OPTS: -Dzookeeper.4lw.commands.whitelist=*
-    networks:
-      - sensor-flow-platform-network
-
-  zookeeper-kafka-3:
-    image: confluentinc/cp-zookeeper:latest
-    container_name: zookeeper-kafka-3
-    ports:
-      - "2283:2181"
-    environment:
-      ZOOKEEPER_SERVER_ID: 3
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_SERVERS: zookeeper-kafka-1:22888:23888;zookeeper-kafka-2:22888:23888;zookeeper-kafka-3:22888:23888
-      KAFKA_OPTS: -Dzookeeper.4lw.commands.whitelist=*
-    networks:
-      - sensor-flow-platform-network
+#  zookeeper-kafka-2:
+#    image: confluentinc/cp-zookeeper:latest
+#    container_name: zookeeper-kafka-2
+#    ports:
+#      - "2282:2181"
+#    environment:
+#      ZOOKEEPER_SERVER_ID: 2
+#      ZOOKEEPER_CLIENT_PORT: 2181
+#      ZOOKEEPER_SERVERS: zookeeper-kafka-1:22888:23888;zookeeper-kafka-2:22888:23888;zookeeper-kafka-3:22888:23888
+#      KAFKA_OPTS: -Dzookeeper.4lw.commands.whitelist=*
+#    networks:
+#      - sensor-flow-platform-network
+#
+#  zookeeper-kafka-3:
+#    image: confluentinc/cp-zookeeper:latest
+#    container_name: zookeeper-kafka-3
+#    ports:
+#      - "2283:2181"
+#    environment:
+#      ZOOKEEPER_SERVER_ID: 3
+#      ZOOKEEPER_CLIENT_PORT: 2181
+#      ZOOKEEPER_SERVERS: zookeeper-kafka-1:22888:23888;zookeeper-kafka-2:22888:23888;zookeeper-kafka-3:22888:23888
+#      KAFKA_OPTS: -Dzookeeper.4lw.commands.whitelist=*
+#    networks:
+#      - sensor-flow-platform-network
 
 
   # ----- kafka cluster -----
@@ -326,7 +330,8 @@ services:
       - "9192:9192"
       - "9193:9193"
     environment:
-      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper-kafka-1:2181,zookeeper-kafka-2:2181,zookeeper-kafka-3:2181
+#      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper-kafka-1:2181,zookeeper-kafka-2:2181,zookeeper-kafka-3:2181
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper-kafka-1:2181
       - ALLOW_PLAINTEXT_LISTENER=yes
       - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CLIENT:PLAINTEXT,EXTERNAL:PLAINTEXT
       - KAFKA_CFG_LISTENERS=CLIENT://:9192,EXTERNAL://:9193
@@ -336,8 +341,8 @@ services:
       - sensor-flow-platform-network
     depends_on:
       - zookeeper-kafka-1
-      - zookeeper-kafka-2
-      - zookeeper-kafka-3
+#      - zookeeper-kafka-2
+#      - zookeeper-kafka-3
 
   kafka-broker-2:
     image: bitnami/kafka:latest
@@ -346,7 +351,8 @@ services:
       - "9292:9292"
       - "9293:9293"
     environment:
-      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper-kafka-1:2181,zookeeper-kafka-2:2181,zookeeper-kafka-3:2181
+#      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper-kafka-1:2181,zookeeper-kafka-2:2181,zookeeper-kafka-3:2181
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper-kafka-1:2181
       - ALLOW_PLAINTEXT_LISTENER=yes
       - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CLIENT:PLAINTEXT,EXTERNAL:PLAINTEXT
       - KAFKA_CFG_LISTENERS=CLIENT://:9292,EXTERNAL://:9293
@@ -356,8 +362,8 @@ services:
       - sensor-flow-platform-network
     depends_on:
       - zookeeper-kafka-1
-      - zookeeper-kafka-2
-      - zookeeper-kafka-3
+#      - zookeeper-kafka-2
+#      - zookeeper-kafka-3
 
   kafka-broker-3:
     image: bitnami/kafka:latest
@@ -366,7 +372,8 @@ services:
       - "9392:9392"
       - "9393:9393"
     environment:
-      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper-kafka-1:2181,zookeeper-kafka-2:2181,zookeeper-kafka-3:2181
+#      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper-kafka-1:2181,zookeeper-kafka-2:2181,zookeeper-kafka-3:2181
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper-kafka-1:2181
       - ALLOW_PLAINTEXT_LISTENER=yes
       - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CLIENT:PLAINTEXT,EXTERNAL:PLAINTEXT
       - KAFKA_CFG_LISTENERS=CLIENT://:9392,EXTERNAL://:9393
@@ -376,8 +383,8 @@ services:
       - sensor-flow-platform-network
     depends_on:
       - zookeeper-kafka-1
-      - zookeeper-kafka-2
-      - zookeeper-kafka-3
+#      - zookeeper-kafka-2
+#      - zookeeper-kafka-3
 
   kafka-init-topics:
     image: bitnami/kafka:latest
@@ -385,8 +392,8 @@ services:
     entrypoint: [ '/bin/sh', '-c' ]
     command: |
       "
-      echo 'sleeping (15s) ...'
-      sleep 15
+      echo 'sleeping (10s) ...'
+      sleep 10
       /opt/bitnami/kafka/bin/kafka-topics.sh --bootstrap-server kafka-broker-1:9192 --list
       echo 'Creating kafka topics'
       /opt/bitnami/kafka/bin/kafka-topics.sh --bootstrap-server kafka-broker-1:9192 --create --if-not-exists --topic sensors-data --replication-factor 3 --partitions 3
@@ -401,6 +408,72 @@ services:
       - kafka-broker-2
       - kafka-broker-3
 
+
+  # ----- timescaledb -----
+
+  timescaledb:
+    image: timescale/timescaledb:latest-pg16
+    container_name: timescaledb
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: sensor_flow_platform
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U admin -d sensor_flow_platform" ]
+      interval: 3s
+      timeout: 3s
+      retries: 3
+    networks:
+      - sensor-flow-platform-network
+
+  liquibase-migrations:
+    image: liquibase/liquibase:latest
+    command:
+      - --changeLogFile=changelog-master.xml
+      - --searchPath=/liquibase/changelog
+      - --driver=org.postgresql.Driver
+      - --url=jdbc:postgresql://timescaledb:5432/sensor_flow_platform
+      - --username=admin
+      - --password=password
+      - update
+    volumes:
+      - ./migrations:/liquibase/changelog
+    networks:
+      - sensor-flow-platform-network
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    user: "0"
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./grafana-data:/var/lib/grafana
+    networks:
+      - sensor-flow-platform-network
+    depends_on:
+      - liquibase-migrations
+
+  # ----- device -----
+
+#  device:
+#    image: device:latest
+#    container_name: device
+#    environment:
+#      KAFKA_BOOTSTRAP_SERVERS: "kafka-broker-1:9192,kafka-broker-2:9292,kafka-broker-3:9392"
+#    entrypoint: ["/bin/sh", "-c", "echo 'Initial delay, waiting 15s...'; sleep 15; exec java -jar device-fat.jar"]
+#    networks:
+#      - sensor-flow-platform-network
+#    depends_on:
+#      - kafka-broker-1
+#      - kafka-broker-2
+#      - kafka-broker-3
+#      - kafka-init-topics
 
 networks:
   sensor-flow-platform-network:
