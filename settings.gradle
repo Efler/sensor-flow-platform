@@ -5,9 +5,6 @@ rootProject.name = 'sensor-flow-platform'
 
 include 'spark-jobs'
 
-include 'spark-jobs:smth'
-findProject(':spark-jobs:smth')?.name = 'smth'
-
 include 'spark-jobs:visualizer'
 findProject(':spark-jobs:visualizer')?.name = 'visualizer'
 
