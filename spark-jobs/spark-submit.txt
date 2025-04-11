@@ -1,6 +1,6 @@
 spark-submit \
-  --class org.eflerrr.sfp.sparkjobs.visualizer.Main \
-  --master spark://spark-master-1:7077 \
+  --class org.eflerrr.sfp.sparkjobs.saver.Main \
+  --master spark://spark-master-2:7077 \
   --deploy-mode cluster \
   --executor-memory 512m \
   --total-executor-cores 5 \
@@ -12,11 +12,11 @@ spark-submit \
   --conf spark.hadoop.fs.s3a.impl=org.apache.hadoop.fs.s3a.S3AFileSystem \
   --conf spark.sql.adaptive.enabled=false \
   --supervise \
-  ./../../spark-jobs/core-fat.jar
+  ./../../spark-jobs/saver-fat.jar
 
 
 spark-submit \
-  --class org.eflerrr.sfp.sparkjobs.visualizer.Main \
+  --class org.eflerrr.sfp.sparkjobs.saver.Main \
   --master spark://spark-master-1:7077 \
   --deploy-mode client \
   --executor-memory 512m \
@@ -28,4 +28,4 @@ spark-submit \
   --conf spark.hadoop.fs.s3a.connection.ssl.enabled=false \
   --conf spark.hadoop.fs.s3a.impl=org.apache.hadoop.fs.s3a.S3AFileSystem \
   --conf spark.sql.adaptive.enabled=false \
-  ./../../spark-jobs/core-fat.jar
+  ./../../spark-jobs/saver-fat.jar

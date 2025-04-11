@@ -1,6 +1,8 @@
 rootProject.name = 'sensor-flow-platform'
 
 
+// --- spark-jobs module ---
+
 include 'spark-jobs'
 
 include 'spark-jobs:smth'
@@ -9,6 +11,11 @@ findProject(':spark-jobs:smth')?.name = 'smth'
 include 'spark-jobs:visualizer'
 findProject(':spark-jobs:visualizer')?.name = 'visualizer'
 
+include 'spark-jobs:saver'
+findProject(':spark-jobs:saver')?.name = 'saver'
+
+
+// --- app module ---
 
 include 'app'
 

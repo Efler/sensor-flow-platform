@@ -11,13 +11,13 @@ java {
 
 shadowJar {
     manifest {
-        attributes 'Main-Class': 'org.eflerrr.sfp.sparkjobs.visualizer'
+        attributes 'Main-Class': 'org.eflerrr.sfp.sparkjobs.saver'
     }
-    archiveFileName = 'visualizer-fat.jar'
+    archiveFileName = 'saver-fat.jar'
     destinationDirectory.set(file("$rootDir/spark-jobs/volume-jobs"))
 }
 
-group = 'org.eflerrr.sfp.sparkjobs.visualizer'
+group = 'org.eflerrr.sfp.sparkjobs.saver'
 version = '0.0.1-SNAPSHOT'
 
 repositories {

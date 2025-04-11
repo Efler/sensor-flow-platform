@@ -1,4 +1,4 @@
-package org.eflerrr.sfp.sparkjobs.visualizer;
+package org.eflerrr.sfp.sparkjobs.saver;
 
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
@@ -14,12 +14,12 @@ import java.util.concurrent.TimeoutException;
 import static org.apache.spark.sql.functions.col;
 import static org.apache.spark.sql.functions.from_json;
 
-public class Visualizer {
+public class Saver {
     public static void run() throws TimeoutException, StreamingQueryException {
 
         SparkSession spark = SparkSession
                 .builder()
-                .appName("Sensors Streaming Visualizer")
+                .appName("Sensors Streaming Saver")
                 .config("spark.log.level", "INFO")
                 .getOrCreate();
 
@@ -43,20 +43,16 @@ public class Visualizer {
                 .select("data.*");
 
         StreamingQuery query = metricsDF.writeStream()
-                .outputMode("append")
-                .trigger(Trigger.ProcessingTime("3 seconds"))
+                .trigger(Trigger.ProcessingTime("10 seconds"))
                 .foreachBatch((batchDF, batchId) -> {
                     batchDF.write()                     // todo! configs
-                            .format("jdbc")
-                            .option("url", "jdbc:postgresql://timescaledb:5432/sensor_flow_platform")
-                            .option("dbtable", "sensors_metrics")
-                            .option("user", "admin")
-                            .option("password", "password")
-                            .option("driver", "org.postgresql.Driver")
+                            .format("parquet")
+                            .option("path", "s3a://spark-bucket/sensors-data/")
                             .mode("append")
                             .save();
+                    System.out.println("Writing batch " + batchId + " to S3");
                 })
-                .option("checkpointLocation", "s3a://spark-bucket/checkpoints/visualizer")
+                .option("checkpointLocation", "s3a://spark-bucket/checkpoints/saver")
                 .start();
 
         query.awaitTermination();

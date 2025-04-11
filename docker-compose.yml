@@ -72,8 +72,8 @@ services:
       - zookeeper-spark-3
       - minio-client
       - minio-proxy
-      - timescaledb
-      - liquibase-migrations
+#      - timescaledb
+#      - liquibase-migrations
 
   spark-master-2:
     image: bitnami/spark:3.5
@@ -103,8 +103,8 @@ services:
       - zookeeper-spark-3
       - minio-client
       - minio-proxy
-      - timescaledb
-      - liquibase-migrations
+#      - timescaledb
+#      - liquibase-migrations
 
   spark-worker-1:
     image: bitnami/spark:3.5
@@ -411,53 +411,53 @@ services:
 
   # ----- timescaledb -----
 
-  timescaledb:
-    image: timescale/timescaledb:latest-pg16
-    container_name: timescaledb
-    ports:
-      - "5432:5432"
-    environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: sensor_flow_platform
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U admin -d sensor_flow_platform" ]
-      interval: 3s
-      timeout: 3s
-      retries: 3
-    networks:
-      - sensor-flow-platform-network
+#  timescaledb:
+#    image: timescale/timescaledb:latest-pg16
+#    container_name: timescaledb
+#    ports:
+#      - "5432:5432"
+#    environment:
+#      POSTGRES_USER: admin
+#      POSTGRES_PASSWORD: password
+#      POSTGRES_DB: sensor_flow_platform
+#    healthcheck:
+#      test: [ "CMD-SHELL", "pg_isready -U admin -d sensor_flow_platform" ]
+#      interval: 3s
+#      timeout: 3s
+#      retries: 3
+#    networks:
+#      - sensor-flow-platform-network
+#
+#  liquibase-migrations:
+#    image: liquibase/liquibase:latest
+#    command:
+#      - --changeLogFile=changelog-master.xml
+#      - --searchPath=/liquibase/changelog
+#      - --driver=org.postgresql.Driver
+#      - --url=jdbc:postgresql://timescaledb:5432/sensor_flow_platform
+#      - --username=admin
+#      - --password=password
+#      - update
+#    volumes:
+#      - ./migrations:/liquibase/changelog
+#    networks:
+#      - sensor-flow-platform-network
+#    depends_on:
+#      timescaledb:
+#        condition: service_healthy
 
-  liquibase-migrations:
-    image: liquibase/liquibase:latest
-    command:
-      - --changeLogFile=changelog-master.xml
-      - --searchPath=/liquibase/changelog
-      - --driver=org.postgresql.Driver
-      - --url=jdbc:postgresql://timescaledb:5432/sensor_flow_platform
-      - --username=admin
-      - --password=password
-      - update
-    volumes:
-      - ./migrations:/liquibase/changelog
-    networks:
-      - sensor-flow-platform-network
-    depends_on:
-      timescaledb:
-        condition: service_healthy
-
-  grafana:
-    image: grafana/grafana:latest
-    container_name: grafana
-    user: "0"
-    ports:
-      - "3000:3000"
-    volumes:
-      - ./grafana-data:/var/lib/grafana
-    networks:
-      - sensor-flow-platform-network
-    depends_on:
-      - liquibase-migrations
+#  grafana:
+#    image: grafana/grafana:latest
+#    container_name: grafana
+#    user: "0"
+#    ports:
+#      - "3000:3000"
+#    volumes:
+#      - ./grafana-data:/var/lib/grafana
+#    networks:
+#      - sensor-flow-platform-network
+#    depends_on:
+#      - liquibase-migrations
 
   # ----- device -----
 
