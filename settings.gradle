@@ -11,6 +11,9 @@ findProject(':spark-jobs:visualizer')?.name = 'visualizer'
 include 'spark-jobs:saver'
 findProject(':spark-jobs:saver')?.name = 'saver'
 
+include 'spark-jobs:verifier'
+findProject(':spark-jobs:verifier')?.name = 'verifier'
+
 
 // --- app module ---
 
