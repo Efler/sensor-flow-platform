@@ -2,17 +2,18 @@ package org.eflerrr.sfp.sparkjobs.verifier;
 
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
+import org.apache.spark.sql.RowFactory;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.streaming.StreamingQuery;
 import org.apache.spark.sql.streaming.StreamingQueryException;
-import org.apache.spark.sql.streaming.Trigger;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructType;
+import org.eflerrr.sfp.sparkjobs.verifier.service.ValidatorService;
 
+import java.util.List;
 import java.util.concurrent.TimeoutException;
 
-import static org.apache.spark.sql.functions.col;
-import static org.apache.spark.sql.functions.from_json;
+import static org.apache.spark.sql.functions.*;
 
 public class Verifier {
     public static void run() throws TimeoutException, StreamingQueryException {
@@ -30,7 +31,7 @@ public class Verifier {
                 .option("kafka.sasl.mechanism", "PLAIN")
                 .option("kafka.sasl.jaas.config",
                         "org.apache.kafka.common.security.plain.PlainLoginModule required " +
-                        "username=\"producer\" password=\"producer-pass\";")
+                        "username=\"admin\" password=\"admin-pass\";")
                 .option("subscribe", "sensors-data-raw")
                 .option("startingOffsets", "earliest")
                 .load();
@@ -48,24 +49,60 @@ public class Verifier {
                         .alias("data"))
                 .select("data.*");
 
-        StreamingQuery query = metricsDF.writeStream()
-                .outputMode("append")
-                .trigger(Trigger.ProcessingTime("3 seconds"))
-                .foreachBatch((batchDF, batchId) -> {
-                    batchDF.write()                     // todo! configs
-                            .format("jdbc")
-                            .option("url", "jdbc:postgresql://timescaledb:5432/sensor_flow_platform")
-                            .option("dbtable", "sensors_metrics")
-                            .option("user", "admin")
-                            .option("password", "password")
-                            .option("driver", "org.postgresql.Driver")
-                            .mode("append")
-                            .save();
-                })
-                .option("checkpointLocation", "s3a://spark-bucket/checkpoints/visualizer")
+        List<Row> secretRows = List.of(
+                RowFactory.create("device_228", "secret_228"));      // todo! device secrets!
+        StructType secretSchema = new StructType()
+                .add("device_id", DataTypes.StringType)
+                .add("secret", DataTypes.StringType);
+        Dataset<Row> secretsDF = spark.createDataFrame(secretRows, secretSchema);
+
+        Dataset<Row> resultDF = metricsDF.join(secretsDF, "device_id", "left");
+
+        var udfName = "validateData";
+        spark.udf().register(udfName, ValidatorService.getUDF(), DataTypes.BooleanType);
+
+        Dataset<Row> verifiedDF = resultDF.filter(
+                expr("%s(device_id, metric_name, metric_value, src_timestamp, signature, secret) = true".formatted(udfName)));
+        Dataset<Row> invalidDF = resultDF.filter(
+                expr("%s(device_id, metric_name, metric_value, src_timestamp, signature, secret) = false".formatted(udfName)));
+
+        Dataset<Row> outputVerifiedDF = verifiedDF.drop("secret");
+        Dataset<Row> outputInvalidDF = invalidDF.drop("secret");
+
+        Dataset<Row> verifiedData = outputVerifiedDF.selectExpr(
+                "CAST(null AS STRING) as key",
+                "to_json(struct(*)) as value"
+        );
+        Dataset<Row> invalidData = outputInvalidDF.selectExpr(
+                "CAST(null AS STRING) as key",
+                "to_json(struct(*)) as value"
+        );
+
+        StreamingQuery verifiedQuery = verifiedData.writeStream()
+                .format("kafka")
+                .option("kafka.bootstrap.servers", "kafka-broker-1:9192,kafka-broker-2:9292,kafka-broker-3:9392")
+                .option("kafka.security.protocol", "SASL_PLAINTEXT")
+                .option("kafka.sasl.mechanism", "PLAIN")
+                .option("kafka.sasl.jaas.config",
+                        "org.apache.kafka.common.security.plain.PlainLoginModule required " +
+                        "username=\"admin\" password=\"admin-pass\";")
+                .option("topic", "sensors-data-verified")
+                .option("checkpointLocation", "s3a://spark-bucket/checkpoints/verifier/verified")
                 .start();
 
-        query.awaitTermination();
+        StreamingQuery invalidQuery = invalidData.writeStream()
+                .format("kafka")
+                .option("kafka.bootstrap.servers", "kafka-broker-1:9192,kafka-broker-2:9292,kafka-broker-3:9392")
+                .option("kafka.security.protocol", "SASL_PLAINTEXT")
+                .option("kafka.sasl.mechanism", "PLAIN")
+                .option("kafka.sasl.jaas.config",
+                        "org.apache.kafka.common.security.plain.PlainLoginModule required " +
+                        "username=\"admin\" password=\"admin-pass\";")
+                .option("topic", "sensors-data-dlq")
+                .option("checkpointLocation", "s3a://spark-bucket/checkpoints/verifier/dlq")
+                .start();
 
+        verifiedQuery.awaitTermination();
+        invalidQuery.awaitTermination();
     }
 }

@@ -16,7 +16,7 @@ spark-submit \
 
 
 spark-submit \
-  --class org.eflerrr.sfp.sparkjobs.saver.Main \
+  --class org.eflerrr.sfp.sparkjobs.verifier.Main \
   --master spark://spark-master-1:7077 \
   --deploy-mode client \
   --executor-memory 512m \
@@ -28,4 +28,4 @@ spark-submit \
   --conf spark.hadoop.fs.s3a.connection.ssl.enabled=false \
   --conf spark.hadoop.fs.s3a.impl=org.apache.hadoop.fs.s3a.S3AFileSystem \
   --conf spark.sql.adaptive.enabled=false \
-  ./../../spark-jobs/saver-fat.jar
+  ./../../spark-jobs/verifier-fat.jar

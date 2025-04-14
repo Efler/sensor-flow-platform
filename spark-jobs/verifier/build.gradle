@@ -30,6 +30,7 @@ dependencies {
     compileOnly 'org.apache.spark:spark-sql_2.12:3.5.4'
     implementation 'org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.4'
     implementation 'org.postgresql:postgresql:42.7.4'
+    implementation 'commons-codec:commons-codec:1.18.0'
 }
 
 test {

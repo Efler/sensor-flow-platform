@@ -2,281 +2,281 @@ services:
 
   # ----- zookeeper cluster (spark) -----
 
-#  zookeeper-spark-1:
-#    image: confluentinc/cp-zookeeper:latest
-#    container_name: zookeeper-spark-1
-#    ports:
-#      - "2181:2181"
-#    environment:
-#      ZOOKEEPER_SERVER_ID: 1
-#      ZOOKEEPER_CLIENT_PORT: 2181
-#      ZOOKEEPER_SERVERS: zookeeper-spark-1:22888:23888;zookeeper-spark-2:22888:23888;zookeeper-spark-3:22888:23888
-#      KAFKA_OPTS: -Dzookeeper.4lw.commands.whitelist=*
-#    networks:
-#      - sensor-flow-platform-network
-#
-#  zookeeper-spark-2:
-#    image: confluentinc/cp-zookeeper:latest
-#    container_name: zookeeper-spark-2
-#    ports:
-#      - "2182:2181"
-#    environment:
-#      ZOOKEEPER_SERVER_ID: 2
-#      ZOOKEEPER_CLIENT_PORT: 2181
-#      ZOOKEEPER_SERVERS: zookeeper-spark-1:22888:23888;zookeeper-spark-2:22888:23888;zookeeper-spark-3:22888:23888
-#      KAFKA_OPTS: -Dzookeeper.4lw.commands.whitelist=*
-#    networks:
-#      - sensor-flow-platform-network
-#
-#  zookeeper-spark-3:
-#    image: confluentinc/cp-zookeeper:latest
-#    container_name: zookeeper-spark-3
-#    ports:
-#      - "2183:2181"
-#    environment:
-#      ZOOKEEPER_SERVER_ID: 3
-#      ZOOKEEPER_CLIENT_PORT: 2181
-#      ZOOKEEPER_SERVERS: zookeeper-spark-1:22888:23888;zookeeper-spark-2:22888:23888;zookeeper-spark-3:22888:23888
-#      KAFKA_OPTS: -Dzookeeper.4lw.commands.whitelist=*
-#    networks:
-#      - sensor-flow-platform-network
-#
-#
-#  # ----- spark cluster -----
-#
-#  spark-master-1:
-#    image: bitnami/spark:3.5
-#    container_name: spark-master-1
-#    ports:
-#      - '7071:7077'
-#      - '8181:8080'
-#      - '5051:6066'
-#    environment:
-#      - SPARK_MODE=master
-#      - SPARK_RPC_AUTHENTICATION_ENABLED=no
-#      - SPARK_RPC_ENCRYPTION_ENABLED=no
-#      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
-#      - SPARK_SSL_ENABLED=no
-#      - SPARK_USER=spark_master_1_user
-#      - SPARK_DAEMON_USER=root
-#      - SPARK_MASTER_HOST=spark-master-1
-#      - SPARK_MASTER_URL=spark://spark-master-1:7077
-#      - SPARK_DAEMON_JAVA_OPTS=-Dspark.deploy.recoveryMode=ZOOKEEPER -Dspark.deploy.zookeeper.url=zookeeper-spark-1:2181,zookeeper-spark-2:2181,zookeeper-spark-3:2181 -Dspark.deploy.zookeeper.dir=/spark
-#    volumes:
-#      - ./spark-jobs/volume-jobs:/opt/spark-jobs
-#    networks:
-#      - sensor-flow-platform-network
-#    depends_on:
-#      - zookeeper-spark-1
-#      - zookeeper-spark-2
-#      - zookeeper-spark-3
-#      - minio-client
-#      - minio-proxy
-##      - timescaledb
-##      - liquibase-migrations
-#
-#  spark-master-2:
-#    image: bitnami/spark:3.5
-#    container_name: spark-master-2
-#    ports:
-#      - '7072:7077'
-#      - '8182:8080'
-#      - '5052:6066'
-#    environment:
-#      - SPARK_MODE=master
-#      - SPARK_RPC_AUTHENTICATION_ENABLED=no
-#      - SPARK_RPC_ENCRYPTION_ENABLED=no
-#      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
-#      - SPARK_SSL_ENABLED=no
-#      - SPARK_USER=spark_master_2_user
-#      - SPARK_DAEMON_USER=root
-#      - SPARK_MASTER_HOST=spark-master-2
-#      - SPARK_MASTER_URL=spark://spark-master-2:7077
-#      - SPARK_DAEMON_JAVA_OPTS=-Dspark.deploy.recoveryMode=ZOOKEEPER -Dspark.deploy.zookeeper.url=zookeeper-spark-1:2181,zookeeper-spark-2:2181,zookeeper-spark-3:2181 -Dspark.deploy.zookeeper.dir=/spark
-#    volumes:
-#      - ./spark-jobs/volume-jobs:/opt/spark-jobs
-#    networks:
-#      - sensor-flow-platform-network
-#    depends_on:
-#      - zookeeper-spark-1
-#      - zookeeper-spark-2
-#      - zookeeper-spark-3
-#      - minio-client
-#      - minio-proxy
-##      - timescaledb
-##      - liquibase-migrations
-#
-#  spark-worker-1:
-#    image: bitnami/spark:3.5
-#    container_name: spark-worker-1
-#    ports:
-#      - '8281:8081'
-#      - '4041:4040'
-#    environment:
-#      - SPARK_MODE=worker
-#      - SPARK_MASTER_URL=spark://spark-master-1:7077,spark-master-2:7077
-#      - SPARK_WORKER_MEMORY=1g
-#      - SPARK_WORKER_CORES=2
-#      - SPARK_RPC_AUTHENTICATION_ENABLED=no
-#      - SPARK_RPC_ENCRYPTION_ENABLED=no
-#      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
-#      - SPARK_SSL_ENABLED=no
-#      - SPARK_USER=spark_worker_1_user
-#      - SPARK_DAEMON_USER=root
-#    volumes:
-#      - ./spark-jobs/volume-jobs:/opt/spark-jobs
-#    networks:
-#      - sensor-flow-platform-network
-#    depends_on:
-#      - spark-master-1
-#      - spark-master-2
-#
-#  spark-worker-2:
-#    image: bitnami/spark:3.5
-#    container_name: spark-worker-2
-#    ports:
-#      - '8282:8081'
-#      - '4042:4040'
-#    environment:
-#      - SPARK_MODE=worker
-#      - SPARK_MASTER_URL=spark://spark-master-1:7077,spark-master-2:7077
-#      - SPARK_WORKER_MEMORY=1g
-#      - SPARK_WORKER_CORES=2
-#      - SPARK_RPC_AUTHENTICATION_ENABLED=no
-#      - SPARK_RPC_ENCRYPTION_ENABLED=no
-#      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
-#      - SPARK_SSL_ENABLED=no
-#      - SPARK_USER=spark_worker_2_user
-#      - SPARK_DAEMON_USER=root
-#    volumes:
-#      - ./spark-jobs/volume-jobs:/opt/spark-jobs
-#    networks:
-#      - sensor-flow-platform-network
-#    depends_on:
-#      - spark-master-1
-#      - spark-master-2
-#
-#  spark-worker-3:
-#    image: bitnami/spark:3.5
-#    container_name: spark-worker-3
-#    ports:
-#      - '8283:8081'
-#      - '4043:4040'
-#    environment:
-#      - SPARK_MODE=worker
-#      - SPARK_MASTER_URL=spark://spark-master-1:7077,spark-master-2:7077
-#      - SPARK_WORKER_MEMORY=1g
-#      - SPARK_WORKER_CORES=2
-#      - SPARK_RPC_AUTHENTICATION_ENABLED=no
-#      - SPARK_RPC_ENCRYPTION_ENABLED=no
-#      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
-#      - SPARK_SSL_ENABLED=no
-#      - SPARK_USER=spark_worker_3_user
-#      - SPARK_DAEMON_USER=root
-#    volumes:
-#      - ./spark-jobs/volume-jobs:/opt/spark-jobs
-#    networks:
-#      - sensor-flow-platform-network
-#    depends_on:
-#      - spark-master-1
-#      - spark-master-2
-#
-#
-#  # ----- minio cluster -----
-#
-#  minio-1:
-#    image: minio/minio
-#    container_name: minio-1
-#    command: server --address ":9000" --console-address ":9001" http://minio-{1...4}/data
-#    environment:
-#      MINIO_ROOT_USER: minioadmin
-#      MINIO_ROOT_PASSWORD: minioadmin
-#    ports:
-#      - "9010:9000"
-#      - "9011:9001"
-#    volumes:
-#      - ./s3/minio-1:/data
-#    networks:
-#      - sensor-flow-platform-network
-#
-#  minio-2:
-#    image: minio/minio
-#    container_name: minio-2
-#    command: server --address ":9000" --console-address ":9001" http://minio-{1...4}/data
-#    environment:
-#      MINIO_ROOT_USER: minioadmin
-#      MINIO_ROOT_PASSWORD: minioadmin
-#    ports:
-#      - "9020:9000"
-#      - "9021:9001"
-#    volumes:
-#      - ./s3/minio-2:/data
-#    networks:
-#      - sensor-flow-platform-network
-#
-#  minio-3:
-#    image: minio/minio
-#    container_name: minio-3
-#    command: server --address ":9000" --console-address ":9001" http://minio-{1...4}/data
-#    environment:
-#      MINIO_ROOT_USER: minioadmin
-#      MINIO_ROOT_PASSWORD: minioadmin
-#    ports:
-#      - "9030:9000"
-#      - "9031:9001"
-#    volumes:
-#      - ./s3/minio-3:/data
-#    networks:
-#      - sensor-flow-platform-network
-#
-#  minio-4:
-#    image: minio/minio
-#    container_name: minio-4
-#    command: server --address ":9000" --console-address ":9001" http://minio-{1...4}/data
-#    environment:
-#      MINIO_ROOT_USER: minioadmin
-#      MINIO_ROOT_PASSWORD: minioadmin
-#    ports:
-#      - "9040:9000"
-#      - "9041:9001"
-#    volumes:
-#      - ./s3/minio-4:/data
-#    networks:
-#      - sensor-flow-platform-network
-#
-#  minio-client:
-#    image: bitnami/minio-client
-#    container_name: minio-client
-#    entrypoint: >
-#      /bin/sh -c "
-#      sleep 7;
-#      mc alias set myminio http://minio-1:9000 minioadmin minioadmin;
-#      mc mb myminio/spark-bucket;
-#      mc anonymous set public myminio/spark-bucket;
-#      exit 0;
-#      "
-#    networks:
-#      - sensor-flow-platform-network
-#    depends_on:
-#      - minio-1
-#      - minio-2
-#      - minio-3
-#      - minio-4
-#
-#  minio-proxy:
-#    image: nginx:latest
-#    container_name: minio-proxy
-#    volumes:
-#      - ./minio-proxy-config/nginx.conf:/etc/nginx/nginx.conf:ro
-#    ports:
-#      - "9990:9990"
-#    networks:
-#      - sensor-flow-platform-network
-#    depends_on:
-#      - minio-1
-#      - minio-2
-#      - minio-3
-#      - minio-4
+  zookeeper-spark-1:
+    image: confluentinc/cp-zookeeper:latest
+    container_name: zookeeper-spark-1
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_SERVER_ID: 1
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_SERVERS: zookeeper-spark-1:22888:23888;zookeeper-spark-2:22888:23888;zookeeper-spark-3:22888:23888
+      KAFKA_OPTS: -Dzookeeper.4lw.commands.whitelist=*
+    networks:
+      - sensor-flow-platform-network
+
+  zookeeper-spark-2:
+    image: confluentinc/cp-zookeeper:latest
+    container_name: zookeeper-spark-2
+    ports:
+      - "2182:2181"
+    environment:
+      ZOOKEEPER_SERVER_ID: 2
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_SERVERS: zookeeper-spark-1:22888:23888;zookeeper-spark-2:22888:23888;zookeeper-spark-3:22888:23888
+      KAFKA_OPTS: -Dzookeeper.4lw.commands.whitelist=*
+    networks:
+      - sensor-flow-platform-network
+
+  zookeeper-spark-3:
+    image: confluentinc/cp-zookeeper:latest
+    container_name: zookeeper-spark-3
+    ports:
+      - "2183:2181"
+    environment:
+      ZOOKEEPER_SERVER_ID: 3
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_SERVERS: zookeeper-spark-1:22888:23888;zookeeper-spark-2:22888:23888;zookeeper-spark-3:22888:23888
+      KAFKA_OPTS: -Dzookeeper.4lw.commands.whitelist=*
+    networks:
+      - sensor-flow-platform-network
+
+
+  # ----- spark cluster -----
+
+  spark-master-1:
+    image: bitnami/spark:3.5
+    container_name: spark-master-1
+    ports:
+      - '7071:7077'
+      - '8181:8080'
+      - '5051:6066'
+    environment:
+      - SPARK_MODE=master
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+      - SPARK_SSL_ENABLED=no
+      - SPARK_USER=spark_master_1_user
+      - SPARK_DAEMON_USER=root
+      - SPARK_MASTER_HOST=spark-master-1
+      - SPARK_MASTER_URL=spark://spark-master-1:7077
+      - SPARK_DAEMON_JAVA_OPTS=-Dspark.deploy.recoveryMode=ZOOKEEPER -Dspark.deploy.zookeeper.url=zookeeper-spark-1:2181,zookeeper-spark-2:2181,zookeeper-spark-3:2181 -Dspark.deploy.zookeeper.dir=/spark
+    volumes:
+      - ./spark-jobs/volume-jobs:/opt/spark-jobs
+    networks:
+      - sensor-flow-platform-network
+    depends_on:
+      - zookeeper-spark-1
+      - zookeeper-spark-2
+      - zookeeper-spark-3
+      - minio-client
+      - minio-proxy
+#      - timescaledb
+#      - liquibase-migrations
+
+  spark-master-2:
+    image: bitnami/spark:3.5
+    container_name: spark-master-2
+    ports:
+      - '7072:7077'
+      - '8182:8080'
+      - '5052:6066'
+    environment:
+      - SPARK_MODE=master
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+      - SPARK_SSL_ENABLED=no
+      - SPARK_USER=spark_master_2_user
+      - SPARK_DAEMON_USER=root
+      - SPARK_MASTER_HOST=spark-master-2
+      - SPARK_MASTER_URL=spark://spark-master-2:7077
+      - SPARK_DAEMON_JAVA_OPTS=-Dspark.deploy.recoveryMode=ZOOKEEPER -Dspark.deploy.zookeeper.url=zookeeper-spark-1:2181,zookeeper-spark-2:2181,zookeeper-spark-3:2181 -Dspark.deploy.zookeeper.dir=/spark
+    volumes:
+      - ./spark-jobs/volume-jobs:/opt/spark-jobs
+    networks:
+      - sensor-flow-platform-network
+    depends_on:
+      - zookeeper-spark-1
+      - zookeeper-spark-2
+      - zookeeper-spark-3
+      - minio-client
+      - minio-proxy
+#      - timescaledb
+#      - liquibase-migrations
+
+  spark-worker-1:
+    image: bitnami/spark:3.5
+    container_name: spark-worker-1
+    ports:
+      - '8281:8081'
+      - '4041:4040'
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://spark-master-1:7077,spark-master-2:7077
+      - SPARK_WORKER_MEMORY=1g
+      - SPARK_WORKER_CORES=2
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+      - SPARK_SSL_ENABLED=no
+      - SPARK_USER=spark_worker_1_user
+      - SPARK_DAEMON_USER=root
+    volumes:
+      - ./spark-jobs/volume-jobs:/opt/spark-jobs
+    networks:
+      - sensor-flow-platform-network
+    depends_on:
+      - spark-master-1
+      - spark-master-2
+
+  spark-worker-2:
+    image: bitnami/spark:3.5
+    container_name: spark-worker-2
+    ports:
+      - '8282:8081'
+      - '4042:4040'
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://spark-master-1:7077,spark-master-2:7077
+      - SPARK_WORKER_MEMORY=1g
+      - SPARK_WORKER_CORES=2
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+      - SPARK_SSL_ENABLED=no
+      - SPARK_USER=spark_worker_2_user
+      - SPARK_DAEMON_USER=root
+    volumes:
+      - ./spark-jobs/volume-jobs:/opt/spark-jobs
+    networks:
+      - sensor-flow-platform-network
+    depends_on:
+      - spark-master-1
+      - spark-master-2
+
+  spark-worker-3:
+    image: bitnami/spark:3.5
+    container_name: spark-worker-3
+    ports:
+      - '8283:8081'
+      - '4043:4040'
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://spark-master-1:7077,spark-master-2:7077
+      - SPARK_WORKER_MEMORY=1g
+      - SPARK_WORKER_CORES=2
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+      - SPARK_SSL_ENABLED=no
+      - SPARK_USER=spark_worker_3_user
+      - SPARK_DAEMON_USER=root
+    volumes:
+      - ./spark-jobs/volume-jobs:/opt/spark-jobs
+    networks:
+      - sensor-flow-platform-network
+    depends_on:
+      - spark-master-1
+      - spark-master-2
+
+
+  # ----- minio cluster -----
+
+  minio-1:
+    image: minio/minio
+    container_name: minio-1
+    command: server --address ":9000" --console-address ":9001" http://minio-{1...4}/data
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9010:9000"
+      - "9011:9001"
+    volumes:
+      - ./s3/minio-1:/data
+    networks:
+      - sensor-flow-platform-network
+
+  minio-2:
+    image: minio/minio
+    container_name: minio-2
+    command: server --address ":9000" --console-address ":9001" http://minio-{1...4}/data
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9020:9000"
+      - "9021:9001"
+    volumes:
+      - ./s3/minio-2:/data
+    networks:
+      - sensor-flow-platform-network
+
+  minio-3:
+    image: minio/minio
+    container_name: minio-3
+    command: server --address ":9000" --console-address ":9001" http://minio-{1...4}/data
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9030:9000"
+      - "9031:9001"
+    volumes:
+      - ./s3/minio-3:/data
+    networks:
+      - sensor-flow-platform-network
+
+  minio-4:
+    image: minio/minio
+    container_name: minio-4
+    command: server --address ":9000" --console-address ":9001" http://minio-{1...4}/data
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9040:9000"
+      - "9041:9001"
+    volumes:
+      - ./s3/minio-4:/data
+    networks:
+      - sensor-flow-platform-network
+
+  minio-client:
+    image: bitnami/minio-client
+    container_name: minio-client
+    entrypoint: >
+      /bin/sh -c "
+      sleep 7;
+      mc alias set myminio http://minio-1:9000 minioadmin minioadmin;
+      mc mb myminio/spark-bucket;
+      mc anonymous set public myminio/spark-bucket;
+      exit 0;
+      "
+    networks:
+      - sensor-flow-platform-network
+    depends_on:
+      - minio-1
+      - minio-2
+      - minio-3
+      - minio-4
+
+  minio-proxy:
+    image: nginx:latest
+    container_name: minio-proxy
+    volumes:
+      - ./minio-proxy-config/nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "9990:9990"
+    networks:
+      - sensor-flow-platform-network
+    depends_on:
+      - minio-1
+      - minio-2
+      - minio-3
+      - minio-4
 
 
   # ----- zookeeper cluster (kafka) -----
@@ -442,11 +442,14 @@ services:
       echo '> sensors-data-raw'
       /opt/bitnami/kafka/bin/kafka-acls.sh --bootstrap-server kafka-broker-1:9192 --command-config /tmp/client.properties --add --allow-principal User:* --operation Write --topic sensors-data-raw
       /opt/bitnami/kafka/bin/kafka-acls.sh --bootstrap-server kafka-broker-1:9192 --command-config /tmp/client.properties --add --allow-principal User:admin --operation Read --topic sensors-data-raw
+      /opt/bitnami/kafka/bin/kafka-acls.sh --bootstrap-server kafka-broker-1:9192 --command-config /tmp/client.properties --add --allow-principal User:admin --operation DescribeConfigs --topic sensors-data-raw
       echo '> sensors-data-verified'
       /opt/bitnami/kafka/bin/kafka-acls.sh --bootstrap-server kafka-broker-1:9192 --command-config /tmp/client.properties --add --allow-principal User:admin --operation Read --operation Write --topic sensors-data-verified
+      /opt/bitnami/kafka/bin/kafka-acls.sh --bootstrap-server kafka-broker-1:9192 --command-config /tmp/client.properties --add --allow-principal User:admin --operation DescribeConfigs --topic sensors-data-verified
       echo '> sensors-data-dlq'
       /opt/bitnami/kafka/bin/kafka-acls.sh --bootstrap-server kafka-broker-1:9192 --command-config /tmp/client.properties --add --allow-principal User:admin --operation Write --topic sensors-data-dlq
       /opt/bitnami/kafka/bin/kafka-acls.sh --bootstrap-server kafka-broker-1:9192 --command-config /tmp/client.properties --add --allow-principal User:* --operation Read --topic sensors-data-dlq
+      /opt/bitnami/kafka/bin/kafka-acls.sh --bootstrap-server kafka-broker-1:9192 --command-config /tmp/client.properties --add --allow-principal User:* --operation DescribeConfigs --topic sensors-data-dlq
       echo '--- ACL setup complete ---'
 
       exit 0
