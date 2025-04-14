@@ -2,6 +2,7 @@ todo.txt
 sow.txt
 .run
 grafana-data/
+s3/
 
 gradlew
 gradlew.bat
