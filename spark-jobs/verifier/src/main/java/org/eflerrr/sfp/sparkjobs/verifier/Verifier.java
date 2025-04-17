@@ -33,10 +33,10 @@ public class Verifier {
                         "org.apache.kafka.common.security.plain.PlainLoginModule required " +
                         "username=\"admin\" password=\"admin-pass\";")
                 .option("subscribe", "sensors-data-raw")
-                .option("startingOffsets", "earliest")
+                .option("startingOffsets", "latest")
                 .load();
 
-        StructType sensorsDataSchema = new StructType()
+        StructType schema = new StructType()
                 .add("device_id", DataTypes.StringType)
                 .add("metric_name", DataTypes.StringType)
                 .add("metric_value", DataTypes.DoubleType)
@@ -45,7 +45,7 @@ public class Verifier {
 
         Dataset<Row> metricsDF = kafkaStreamRaw.selectExpr("CAST(value AS STRING)")
                 .select(from_json(
-                        col("value"), sensorsDataSchema)
+                        col("value"), schema)
                         .alias("data"))
                 .select("data.*");
 

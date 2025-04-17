@@ -14,6 +14,12 @@ findProject(':spark-jobs:saver')?.name = 'saver'
 include 'spark-jobs:verifier'
 findProject(':spark-jobs:verifier')?.name = 'verifier'
 
+include 'spark-jobs:alerts'
+findProject(':spark-jobs:alerts')?.name = 'alerts'
+
+include 'spark-jobs:alerts:thresholder'
+findProject(':spark-jobs:alerts:thresholder')?.name = 'thresholder'
+
 
 // --- app module ---
 

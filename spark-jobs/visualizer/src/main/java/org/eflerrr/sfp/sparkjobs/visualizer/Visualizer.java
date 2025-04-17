@@ -27,7 +27,7 @@ public class Visualizer {
                 .format("kafka")
                 .option("kafka.bootstrap.servers", "kafka-broker-1:9192,kafka-broker-2:9292,kafka-broker-3:9392")
                 .option("subscribe", "sensors-data")
-                .option("startingOffsets", "earliest")
+                .option("startingOffsets", "latest")
                 .load();
 
         StructType sensorsDataSchema = new StructType()
