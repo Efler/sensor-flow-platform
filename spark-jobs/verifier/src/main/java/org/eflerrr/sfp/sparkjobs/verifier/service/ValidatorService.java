@@ -20,7 +20,7 @@ public class ValidatorService {
             String deviceId, String metricName, Double metricValue, Timestamp srcTimestamp, String signature, String secret)
             throws Exception {
         var MDC = String.format(
-                "deviceId=%s, metricName=%s, metricValue=%s, srcTimestamp=%s",
+                "[deviceId=%s, metricName=%s, metricValue=%s, srcTimestamp=%s]",
                 deviceId, metricName, metricValue, srcTimestamp);
         logger.info("Validating data.. : {}", MDC);
         if (deviceId == null || metricName == null || metricValue == null || srcTimestamp == null || signature == null) {

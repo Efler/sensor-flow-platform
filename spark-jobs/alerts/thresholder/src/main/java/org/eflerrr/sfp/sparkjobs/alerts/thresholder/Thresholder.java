@@ -9,7 +9,11 @@ import org.apache.spark.sql.streaming.StreamingQueryException;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructType;
 import org.eflerrr.sfp.sparkjobs.alerts.thresholder.model.Rule;
+import org.eflerrr.sfp.sparkjobs.alerts.thresholder.model.ThresholdType;
 import org.eflerrr.sfp.sparkjobs.alerts.thresholder.service.AlertService;
+import org.eflerrr.sfp.sparkjobs.alerts.thresholder.utils.RuleBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import scala.reflect.ClassTag$;
 
 import java.sql.Timestamp;
@@ -25,6 +29,8 @@ import java.util.concurrent.TimeoutException;
 import static org.apache.spark.sql.functions.*;
 
 public class Thresholder {
+    public static final Logger logger = LoggerFactory.getLogger(Thresholder.class);
+
     public static void run() throws TimeoutException, StreamingQueryException {
         SparkSession spark = SparkSession
                 .builder()
@@ -62,7 +68,7 @@ public class Thresholder {
         Runnable refreshRules = () -> {
             Dataset<Row> devices = spark.read()
                     .format("jdbc")
-                    .option("url", "jdbc:postgresql://postgres:5432/sensor_flow_platform")
+                    .option("url", "jdbc:postgresql://postgresql:5432/sensor_flow_platform")
                     .option("dbtable", "device")
                     .option("user", "admin")
                     .option("password", "password")
@@ -71,17 +77,18 @@ public class Thresholder {
                     .select("device_id", "model_id", "environment_temp", "usage_hours", "install_date");
             Dataset<Row> modelParams = spark.read()
                     .format("jdbc")
-                    .option("url", "jdbc:postgresql://postgres:5432/sensor_flow_platform")
+                    .option("url", "jdbc:postgresql://postgresql:5432/sensor_flow_platform")
                     .option("dbtable", "model_params")
                     .option("user", "admin")
                     .option("password", "password")
                     .option("driver", "org.postgresql.Driver")
                     .load()
-                    .select("model_id", "metric_name", "a0", "a1", "a2", "a3");
+                    .select("model_id", "metric_name", "threshold_type", "a0", "a1", "a2", "a3");
 
             List<Row> deviceRows = devices.collectAsList();
             List<Row> paramRows = modelParams.collectAsList();
             Map<String, Rule> map = new HashMap<>();
+            RuleBuilder ruleBuilder = RuleBuilder.getInstance();
             for (Row m : deviceRows) {
                 String deviceId = m.getAs("device_id");
                 String modelId = m.getAs("model_id");
@@ -94,14 +101,25 @@ public class Thresholder {
                         continue;
                     }
                     String metricName = p.getAs("metric_name");
+                    var thresholdType = ThresholdType.fromString(p.getAs("threshold_type"));
                     double a0 = p.getAs("a0");
                     double a1 = p.getAs("a1");
                     double a2 = p.getAs("a2");
                     double a3 = p.getAs("a3");
-                    map.put(deviceId + "#" + metricName,
-                            new Rule(
-                                    deviceId, modelId, installDate, envTemp, usageHrs,
-                                    a0, a1, a2, a3));
+                    var key = deviceId + "#" + metricName + "#" + thresholdType;
+                    var value = ruleBuilder.withDeviceId(deviceId)
+                            .withModelId(modelId)
+                            .withInstallDate(installDate)
+                            .withEnvTemp(envTemp)
+                            .withUsageHours(usageHrs)
+                            .withA0(a0)
+                            .withA1(a1)
+                            .withA2(a2)
+                            .withA3(a3)
+                            .withType(thresholdType)
+                            .build();
+                    map.put(key, value);
+                    logger.info("Rule updated:  {} | {}", key, value);
                 }
             }
 

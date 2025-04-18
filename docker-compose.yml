@@ -73,7 +73,9 @@ services:
       - minio-client
       - minio-proxy
 #      - timescaledb
-#      - liquibase-migrations
+#      - liquibase-migrations-timescaledb
+      - postgresql
+      - liquibase-migrations-postgresql
 
   spark-master-2:
     image: bitnami/spark:3.5
@@ -104,7 +106,9 @@ services:
       - minio-client
       - minio-proxy
 #      - timescaledb
-#      - liquibase-migrations
+#      - liquibase-migrations-timescaledb
+      - postgresql
+      - liquibase-migrations-postgresql
 
   spark-worker-1:
     image: bitnami/spark:3.5
@@ -434,6 +438,7 @@ services:
       echo '--- Creating kafka topics ---'
       /opt/bitnami/kafka/bin/kafka-topics.sh --bootstrap-server kafka-broker-1:9192 --command-config /tmp/client.properties --create --if-not-exists --topic sensors-data-raw --replication-factor 3 --partitions 3
       /opt/bitnami/kafka/bin/kafka-topics.sh --bootstrap-server kafka-broker-1:9192 --command-config /tmp/client.properties --create --if-not-exists --topic sensors-data-verified --replication-factor 3 --partitions 3
+      /opt/bitnami/kafka/bin/kafka-topics.sh --bootstrap-server kafka-broker-1:9192 --command-config /tmp/client.properties --create --if-not-exists --topic sensors-data-alerts --replication-factor 3 --partitions 3
       /opt/bitnami/kafka/bin/kafka-topics.sh --bootstrap-server kafka-broker-1:9192 --command-config /tmp/client.properties --create --if-not-exists --topic sensors-data-dlq --replication-factor 2 --partitions 3
       echo '--- Successfully created the following topics: ---'
       /opt/bitnami/kafka/bin/kafka-topics.sh --bootstrap-server kafka-broker-1:9192 --command-config /tmp/client.properties --list
@@ -446,6 +451,9 @@ services:
       echo '> sensors-data-verified'
       /opt/bitnami/kafka/bin/kafka-acls.sh --bootstrap-server kafka-broker-1:9192 --command-config /tmp/client.properties --add --allow-principal User:admin --operation Read --operation Write --topic sensors-data-verified
       /opt/bitnami/kafka/bin/kafka-acls.sh --bootstrap-server kafka-broker-1:9192 --command-config /tmp/client.properties --add --allow-principal User:admin --operation DescribeConfigs --topic sensors-data-verified
+      echo '> sensors-data-alerts'
+      /opt/bitnami/kafka/bin/kafka-acls.sh --bootstrap-server kafka-broker-1:9192 --command-config /tmp/client.properties --add --allow-principal User:admin --operation Read --operation Write --topic sensors-data-alerts
+      /opt/bitnami/kafka/bin/kafka-acls.sh --bootstrap-server kafka-broker-1:9192 --command-config /tmp/client.properties --add --allow-principal User:admin --operation DescribeConfigs --topic sensors-data-alerts
       echo '> sensors-data-dlq'
       /opt/bitnami/kafka/bin/kafka-acls.sh --bootstrap-server kafka-broker-1:9192 --command-config /tmp/client.properties --add --allow-principal User:admin --operation Write --topic sensors-data-dlq
       /opt/bitnami/kafka/bin/kafka-acls.sh --bootstrap-server kafka-broker-1:9192 --command-config /tmp/client.properties --add --allow-principal User:* --operation Read --topic sensors-data-dlq
@@ -481,7 +489,7 @@ services:
 #    networks:
 #      - sensor-flow-platform-network
 #
-#  liquibase-migrations:
+#  liquibase-migrations-timescaledb:
 #    image: liquibase/liquibase:latest
 #    command:
 #      - --changeLogFile=changelog-master.xml
@@ -492,7 +500,7 @@ services:
 #      - --password=password
 #      - update
 #    volumes:
-#      - ./migrations:/liquibase/changelog
+#      - ./migrations/timescaledb:/liquibase/changelog
 #    networks:
 #      - sensor-flow-platform-network
 #    depends_on:
@@ -510,7 +518,44 @@ services:
 #    networks:
 #      - sensor-flow-platform-network
 #    depends_on:
-#      - liquibase-migrations
+#      - liquibase-migrations-timescaledb
+
+
+  # ----- postgresql -----
+
+  postgresql:
+    image: postgres:latest
+    ports:
+      - "5444:5432"
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: sensor_flow_platform
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U admin -d sensor_flow_platform" ]
+      interval: 3s
+      timeout: 3s
+      retries: 3
+    networks:
+      - sensor-flow-platform-network
+
+  liquibase-migrations-postgresql:
+    image: liquibase/liquibase:latest
+    command:
+      - --changeLogFile=changelog-master.xml
+      - --searchPath=/liquibase/changelog
+      - --driver=org.postgresql.Driver
+      - --url=jdbc:postgresql://postgresql:5432/sensor_flow_platform
+      - --username=admin
+      - --password=password
+      - update
+    volumes:
+      - ./migrations/postgresql:/liquibase/changelog
+    networks:
+      - sensor-flow-platform-network
+    depends_on:
+      postgresql:
+        condition: service_healthy
 
   # ----- device -----
 
