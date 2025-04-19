@@ -563,21 +563,21 @@ services:
 
   # ----- alerter -----
 
-  alerter:
-    image: alerter:latest
-    container_name: alerter
-    environment:
-      ALERTER_TELEGRAM_TOKEN: ${TOKEN}
-    entrypoint: ["/bin/sh", "-c", "echo 'Initial delay, waiting 30s...'; sleep 30; exec java -jar alerter-fat.jar"]
-    networks:
-      - sensor-flow-platform-network
-    depends_on:
-      - kafka-broker-1
-      - kafka-broker-2
-      - kafka-broker-3
-      - kafka-init
-      - postgresql
-      - liquibase-migrations-postgresql
+#  alerter:
+#    image: alerter:latest
+#    container_name: alerter
+#    environment:
+#      ALERTER_TELEGRAM_TOKEN: ${TOKEN}
+#    entrypoint: ["/bin/sh", "-c", "echo 'Initial delay, waiting 30s...'; sleep 30; exec java -jar alerter-fat.jar"]
+#    networks:
+#      - sensor-flow-platform-network
+#    depends_on:
+#      - kafka-broker-1
+#      - kafka-broker-2
+#      - kafka-broker-3
+#      - kafka-init
+#      - postgresql
+#      - liquibase-migrations-postgresql
 
 
   # ----- device -----

@@ -2,20 +2,30 @@ package org.eflerrr.sfp.sparkjobs.verifier;
 
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
-import org.apache.spark.sql.RowFactory;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.streaming.StreamingQuery;
 import org.apache.spark.sql.streaming.StreamingQueryException;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructType;
 import org.eflerrr.sfp.sparkjobs.verifier.service.ValidatorService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import scala.reflect.ClassTag$;
 
-import java.util.List;
+import java.sql.Timestamp;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static org.apache.spark.sql.functions.*;
 
 public class Verifier {
+
+    private static final String SECRETS_MASTER_KEY = "SECRETS-MASTER-KEY";
+    public static final Logger logger = LoggerFactory.getLogger(Verifier.class);
+
     public static void run() throws TimeoutException, StreamingQueryException {
 
         SparkSession spark = SparkSession
@@ -23,6 +33,41 @@ public class Verifier {
                 .appName("Sensors Streaming Verifier")
                 .config("spark.log.level", "INFO")
                 .getOrCreate();
+
+        var validatorService = new ValidatorService(
+                spark.sparkContext().broadcast(
+                        new HashMap<>(), ClassTag$.MODULE$.apply(Map.class))
+        );
+
+        // ------------ device secrets ------------ //
+
+        var scheduler = Executors.newSingleThreadScheduledExecutor();
+        Runnable refreshSecrets = () -> {
+            Dataset<Row> deviceSecrets = spark.read()
+                    .format("jdbc")
+                    .option("url", "jdbc:postgresql://postgresql:5432/sensor_flow_platform")
+                    .option("dbtable", "(SELECT device_id, pgp_sym_decrypt(secret, '%s') AS decrypt_secret FROM device) AS device_secrets"
+                            .formatted(SECRETS_MASTER_KEY))
+                    .option("user", "admin")
+                    .option("password", "password")
+                    .option("driver", "org.postgresql.Driver")
+                    .load();
+
+            Map<String, String> secretsMap = new HashMap<>();
+            for (var row : deviceSecrets.collectAsList()) {
+                String device = row.getAs("device_id");
+                String secret = row.getAs("decrypt_secret");
+                secretsMap.put(device, secret);
+            }
+
+            var bc = spark.sparkContext().broadcast(
+                    secretsMap, ClassTag$.MODULE$.apply(Map.class));
+            validatorService.updateBroadcast(bc);
+            logger.info("Secrets are successfully updated!");
+        };
+        scheduler.scheduleAtFixedRate(refreshSecrets, 0, 10, TimeUnit.SECONDS);
+
+        // ------------ verify ------------ //
 
         Dataset<Row> kafkaStreamRaw = spark.readStream()
                 .format("kafka")
@@ -49,31 +94,22 @@ public class Verifier {
                         .alias("data"))
                 .select("data.*");
 
-        List<Row> secretRows = List.of(
-                RowFactory.create("device_228", "secret_228"));      // todo! device secrets!
-        StructType secretSchema = new StructType()
-                .add("device_id", DataTypes.StringType)
-                .add("secret", DataTypes.StringType);
-        Dataset<Row> secretsDF = spark.createDataFrame(secretRows, secretSchema);
-
-        Dataset<Row> resultDF = metricsDF.join(secretsDF, "device_id", "left");
-
         var udfName = "validateData";
-        spark.udf().register(udfName, ValidatorService.getUDF(), DataTypes.BooleanType);
+        spark.udf().register(udfName, udf(
+                (String deviceId, String metricName, Double metricValue, Timestamp srcTimestamp, String signature)
+                        -> validatorService.validateData(deviceId, metricName, metricValue, srcTimestamp, signature),
+                DataTypes.BooleanType));
 
-        Dataset<Row> verifiedDF = resultDF.filter(
-                expr("%s(device_id, metric_name, metric_value, src_timestamp, signature, secret) = true".formatted(udfName)));
-        Dataset<Row> invalidDF = resultDF.filter(
-                expr("%s(device_id, metric_name, metric_value, src_timestamp, signature, secret) = false".formatted(udfName)));
+        Dataset<Row> verifiedDF = metricsDF.filter(
+                expr("%s(device_id, metric_name, metric_value, src_timestamp, signature) = true".formatted(udfName)));
+        Dataset<Row> invalidDF = metricsDF.filter(
+                expr("%s(device_id, metric_name, metric_value, src_timestamp, signature) = false".formatted(udfName)));
 
-        Dataset<Row> outputVerifiedDF = verifiedDF.drop("secret");
-        Dataset<Row> outputInvalidDF = invalidDF.drop("secret");
-
-        Dataset<Row> verifiedData = outputVerifiedDF.selectExpr(
+        Dataset<Row> verifiedData = verifiedDF.selectExpr(
                 "CAST(null AS STRING) as key",
                 "to_json(struct(*)) as value"
         );
-        Dataset<Row> invalidData = outputInvalidDF.selectExpr(
+        Dataset<Row> invalidData = invalidDF.selectExpr(
                 "CAST(null AS STRING) as key",
                 "to_json(struct(*)) as value"
         );
