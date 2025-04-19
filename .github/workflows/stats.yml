@@ -1,0 +1,28 @@
+name: Update Code Stats
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  stats:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install cloc
+        run: sudo apt install cloc
+
+      - name: Generate stats
+        run: |
+          cloc --md --out=stats.md .
+          cat stats.md
+
+      - name: Commit stats
+        run: |
+          git config --global user.name 'github-actions'
+          git config --global user.email 'actions@github.com'
+          mv stats.md README_STATS.md
+          git add README_STATS.md
+          git commit -m "Update stats" || echo "No changes"
+          git push
