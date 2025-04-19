@@ -2,7 +2,7 @@ name: Update Code Stats
 
 on:
   push:
-    branches: [ main ]
+    branches: [ master ]
 
 jobs:
   stats:
