@@ -20,13 +20,18 @@ jobs:
       - name: Generate stats
         run: |
           cloc --md --out=stats.md .
-          cat stats.md
+          {
+            echo "#### Repo stats"  
+            echo "--- | ---"
+            echo
+            sed -n '3,$p' stats.md
+          } > README.md
+          cat README.md
 
       - name: Commit stats
         run: |
-          git config --global user.name 'github-actions[bot]'
+          git config --global user.name 'github-actions [bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          mv stats.md README_STATS.md
-          git add README_STATS.md
+          git add README.md
           git commit -m "Update stats" || echo "No changes"
           git push
