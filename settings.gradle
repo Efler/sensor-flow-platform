@@ -27,3 +27,6 @@ include 'app'
 
 include 'app:device'
 findProject(':app:device')?.name = 'device'
+
+include 'app:alerter'
+findProject(':app:alerter')?.name = 'alerter'

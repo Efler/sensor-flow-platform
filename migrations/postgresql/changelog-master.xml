@@ -12,6 +12,7 @@
 
     <include file="sql/device.sql"/>
     <include file="sql/model_params.sql"/>
+    <include file="sql/alerter_bot_chat.sql"/>
     <include file="sql/init_test_data.sql"/>
 
 </databaseChangeLog>

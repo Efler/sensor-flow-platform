@@ -1,0 +1,24 @@
+app:
+  telegram-token: ${ALERTER_TELEGRAM_TOKEN:}
+  kafka:
+    bootstrap-servers: ${ALERTER_KAFKA_BOOTSTRAP_SERVERS:kafka-broker-1:9192,kafka-broker-2:9292,kafka-broker-3:9392}
+#    bootstrap-servers: ${ALERTER_KAFKA_BOOTSTRAP_SERVERS:localhost:9193,localhost:9293,localhost:9393}
+    topic: ${ALERTER_KAFKA_TOPIC:sensors-data-alerts}
+    client-id: ${ALERTER_KAFKA_CLIENT_ID:alerter}
+    group-id: ${ALERTER_KAFKA_GROUP_ID:alerter-group}
+    auto-offset-reset: ${ALERTER_KAFKA_AUTO_OFFSET_RESET:latest}
+
+spring:
+  application:
+    name: "alerter"
+  jackson:
+    time-zone: UTC
+  datasource:
+    url: ${ALERTER_DB_URL:jdbc:postgresql://postgresql:5432/sensor_flow_platform}
+#    url: ${ALERTER_DB_URL:jdbc:postgresql://localhost:5444/sensor_flow_platform}
+    username: ${ALERTER_DB_USERNAME:admin}
+    password: ${ALERTER_DB_PASSWORD:password}
+    driver-class-name: org.postgresql.Driver
+
+server:
+  port: 8888

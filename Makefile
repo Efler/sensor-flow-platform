@@ -7,3 +7,7 @@ clear_s3_volumes:
 build_device:
 	docker image rm -f device:latest
 	docker build -t device:latest ./app/device
+
+build_alerter:
+	docker image rm -f alerter:latest
+	docker build -t alerter:latest ./app/alerter

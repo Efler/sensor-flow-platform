@@ -27,6 +27,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static org.apache.spark.sql.functions.*;
+import static org.eflerrr.sfp.sparkjobs.alerts.thresholder.model.AlertType.BROKEN_LOWER_THRESHOLD;
+import static org.eflerrr.sfp.sparkjobs.alerts.thresholder.model.AlertType.BROKEN_UPPER_THRESHOLD;
 
 public class Thresholder {
     public static final Logger logger = LoggerFactory.getLogger(Thresholder.class);
@@ -43,6 +45,9 @@ public class Thresholder {
                 .add("metric_name", DataTypes.StringType)
                 .add("metric_value", DataTypes.DoubleType)
                 .add("src_timestamp", DataTypes.TimestampType);
+        StructType thresholds = new StructType()
+                .add("lower", DataTypes.DoubleType, true)
+                .add("upper", DataTypes.DoubleType, true);
 
         Dataset<Row> stream = spark.readStream()
                 .format("kafka")
@@ -60,9 +65,16 @@ public class Thresholder {
                 .select("data.*");
 
         AlertService alertService = new AlertService();
+        spark.udf().register("computeThresholds", udf(
+                (String deviceId, String metricName, Timestamp ts) ->
+                        alertService.computeThresholds(deviceId, metricName, ts),
+                thresholds
+        ));
         spark.udf().register("isAlert", udf(
-                (String deviceId, String metricName, Double metricValue, Timestamp ts) ->
-                        alertService.isAlert(deviceId, metricName, metricValue, ts), DataTypes.BooleanType));
+                (String deviceId, String metricName, Double metricValue, Timestamp ts,
+                 Double lowerThreshold, Double upperThreshold) ->
+                        alertService.isAlert(deviceId, metricName, metricValue, ts, lowerThreshold, upperThreshold),
+                DataTypes.BooleanType));
 
         ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
         Runnable refreshRules = () -> {
@@ -129,8 +141,21 @@ public class Thresholder {
         };
         scheduler.scheduleAtFixedRate(refreshRules, 0, 10, TimeUnit.SECONDS);
 
-        Dataset<Row> alerts = data.filter(expr("isAlert(device_id, metric_name, metric_value, src_timestamp)"));
-        StreamingQuery query = alerts.selectExpr(
+        Dataset<Row> withThresholds = data.withColumn(
+                "thresholds",
+                callUDF("computeThresholds",
+                        col("device_id"),
+                        col("metric_name"),
+                        col("src_timestamp")));
+        Dataset<Row> alerts = withThresholds.filter(
+                expr("isAlert(device_id, metric_name, metric_value, src_timestamp, thresholds.lower, thresholds.upper)"));
+        Dataset<Row> alertsEnriched = alerts.withColumn(
+                "alert_type",
+                when(col("metric_value").gt(col("thresholds.upper")),
+                        lit(BROKEN_UPPER_THRESHOLD))
+                        .otherwise(lit(BROKEN_LOWER_THRESHOLD)));
+
+        StreamingQuery query = alertsEnriched.selectExpr(
                         "CAST(null AS STRING) AS key",
                         "to_json(struct(*)) AS value")
                 .writeStream()

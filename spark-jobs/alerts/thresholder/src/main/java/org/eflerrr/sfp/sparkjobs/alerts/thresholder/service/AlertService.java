@@ -1,6 +1,8 @@
 package org.eflerrr.sfp.sparkjobs.alerts.thresholder.service;
 
 import org.apache.spark.broadcast.Broadcast;
+import org.apache.spark.sql.Row;
+import org.apache.spark.sql.RowFactory;
 import org.eflerrr.sfp.sparkjobs.alerts.thresholder.model.Rule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,27 +25,37 @@ public class AlertService implements Serializable {
         }
     }
 
+    public Row computeThresholds(
+            String deviceId, String metricName, Timestamp ts
+    ) {
+        Double lowerThreshold = null;
+        Double upperThreshold = null;
+        Broadcast<Map<String, Rule>> bc = ref.get();
+        if (bc != null) {
+            Rule lowerRule = bc.value().get(deviceId + "#" + metricName + "#" + LOWER_THRESHOLD_TYPE);
+            Rule upperRule = bc.value().get(deviceId + "#" + metricName + "#" + UPPER_THRESHOLD_TYPE);
+            if (lowerRule != null) {
+                lowerThreshold = lowerRule.threshold(ts);
+            }
+            if (upperRule != null) {
+                upperThreshold = upperRule.threshold(ts);
+            }
+        }
+        return RowFactory.create(lowerThreshold, upperThreshold);
+    }
+
     public boolean isAlert(
-            String deviceId, String metricName, Double metricValue, Timestamp ts
+            String deviceId, String metricName, Double metricValue, Timestamp ts,
+            Double lowerThreshold, Double upperThreshold
     ) {
         Logger logger = LoggerFactory.getLogger(AlertService.class);
         var MDC = String.format(
                 "[deviceId=%s, metricName=%s, metricValue=%s, srcTimestamp=%s]",
                 deviceId, metricName, metricValue, ts);
-        Broadcast<Map<String, Rule>> bc = ref.get();
-        if (bc == null) {
-            return false;
-        }
-        Rule lowerRule = bc.value().get(deviceId + "#" + metricName + "#" + LOWER_THRESHOLD_TYPE);
-        Rule upperRule = bc.value().get(deviceId + "#" + metricName + "#" + UPPER_THRESHOLD_TYPE);
-        if (lowerRule == null && upperRule == null) {
-            return false;
-        }
 
         boolean lowerPass = true;
         boolean upperPass = true;
-        if (lowerRule != null) {
-            double lowerThreshold = lowerRule.threshold(ts);
+        if (lowerThreshold != null) {
             if (metricValue < lowerThreshold) {
                 logger.info("LOWER threshold is BROKEN:  {} < {}, {}", metricValue, lowerThreshold, MDC);
                 lowerPass = false;
@@ -51,8 +63,7 @@ public class AlertService implements Serializable {
                 logger.info("LOWER threshold is OK:  {} >= {}, {}", metricValue, lowerThreshold, MDC);
             }
         }
-        if (upperRule != null) {
-            double upperThreshold = upperRule.threshold(ts);
+        if (upperThreshold != null) {
             if (metricValue > upperThreshold) {
                 logger.info("UPPER threshold is BROKEN:  {} > {}, {}", metricValue, upperThreshold, MDC);
                 upperPass = false;
@@ -60,7 +71,6 @@ public class AlertService implements Serializable {
                 logger.info("UPPER threshold is OK:  {} <= {}, {}", metricValue, upperThreshold, MDC);
             }
         }
-
         return !(lowerPass && upperPass);
     }
 }
