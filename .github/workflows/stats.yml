@@ -1,4 +1,6 @@
 name: Update Code Stats
+permissions:
+  contents: write
 
 on:
   push:
@@ -9,6 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
 
       - name: Install cloc
         run: sudo apt install cloc
@@ -25,7 +29,4 @@ jobs:
           mv stats.md README_STATS.md
           git add README_STATS.md
           git commit -m "Update stats" || echo "No changes"
-          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
           git push
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
