@@ -21,9 +21,8 @@ jobs:
         run: |
           cloc --md --out=stats.md .
           {
-            echo "#### Repo stats"  
-            echo "--- | ---"
-            echo
+            echo "Repo stats"  
+            echo "---"
             sed -n '3,$p' stats.md
           } > README.md
           cat README.md
