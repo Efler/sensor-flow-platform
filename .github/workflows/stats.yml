@@ -22,6 +22,7 @@ jobs:
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          mv stats.md README_STATS.md
           git add README_STATS.md
           git commit -m "Update stats" || echo "No changes"
           git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
