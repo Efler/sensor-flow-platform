@@ -1,13 +1,5 @@
-todo1.txt
-todo.txt
-.run
-grafana-data/
-s3/
-
-gradlew
-gradlew.bat
+HELP.md
 .gradle
-gradle
 build/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/

@@ -30,3 +30,6 @@ findProject(':app:device')?.name = 'device'
 
 include 'app:alerter'
 findProject(':app:alerter')?.name = 'alerter'
+
+include 'app:admin-panel'
+findProject(':app:admin-panel')?.name = 'admin-panel'
