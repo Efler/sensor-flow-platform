@@ -27,7 +27,7 @@ docker run --rm -it --network=sensor-flow-platform-network spark-job-launcher ba
   "alert_type": "BROKEN_LOWER_THRESHOLD"
 }
 
-api-token: 8173995925:AAE-3oWA6JDKXAR5JgnwYVSNvPUWbcpSztE
+api-token: meow-meow!
 
 
 
