@@ -19,7 +19,13 @@ public class Main {
                 Map.of(
                         "bootstrap.servers", kafkaConfig.getString("bootstrap-servers"),
                         "client.id", kafkaConfig.getString("client-id"),
-                        "acks", kafkaConfig.getString("acks")
+                        "acks", kafkaConfig.getString("acks"),
+                        "security.protocol", "SASL_PLAINTEXT",
+                        "sasl.mechanism", "PLAIN",
+                        "sasl.jaas.config",
+                                "org.apache.kafka.common.security.plain.PlainLoginModule required " +
+                                        "username=\"" + kafkaConfig.getString("username") + "\" " +
+                                        "password=\"" + kafkaConfig.getString("password") + "\";"
                 )
         );
 

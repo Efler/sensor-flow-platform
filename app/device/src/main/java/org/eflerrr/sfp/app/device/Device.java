@@ -2,6 +2,7 @@ package org.eflerrr.sfp.app.device;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.producer.KafkaProducer;
@@ -35,6 +36,7 @@ public class Device {
         this.executor = Executors.newScheduledThreadPool(threadsCount);
         this.topic = topic;
         objectMapper.registerModule(new JavaTimeModule());
+        objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
         this.producer = new KafkaProducer<>(kafkaProps, new StringSerializer(), new StringSerializer());
     }

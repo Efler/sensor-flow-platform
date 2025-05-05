@@ -474,53 +474,53 @@ services:
 
   # ----- timescaledb -----
 
-#  timescaledb:
-#    image: timescale/timescaledb:latest-pg16
-#    container_name: timescaledb
-#    ports:
-#      - "5432:5432"
-#    environment:
-#      POSTGRES_USER: admin
-#      POSTGRES_PASSWORD: password
-#      POSTGRES_DB: sensor_flow_platform
-#    healthcheck:
-#      test: [ "CMD-SHELL", "pg_isready -U admin -d sensor_flow_platform" ]
-#      interval: 3s
-#      timeout: 3s
-#      retries: 3
-#    networks:
-#      - sensor-flow-platform-network
-#
-#  liquibase-migrations-timescaledb:
-#    image: liquibase/liquibase:latest
-#    command:
-#      - --changeLogFile=changelog-master.xml
-#      - --searchPath=/liquibase/changelog
-#      - --driver=org.postgresql.Driver
-#      - --url=jdbc:postgresql://timescaledb:5432/sensor_flow_platform
-#      - --username=admin
-#      - --password=password
-#      - update
-#    volumes:
-#      - ./migrations/timescaledb:/liquibase/changelog
-#    networks:
-#      - sensor-flow-platform-network
-#    depends_on:
-#      timescaledb:
-#        condition: service_healthy
+  timescaledb:
+    image: timescale/timescaledb:latest-pg16
+    container_name: timescaledb
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: sensor_flow_platform
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U admin -d sensor_flow_platform" ]
+      interval: 3s
+      timeout: 3s
+      retries: 3
+    networks:
+      - sensor-flow-platform-network
 
-#  grafana:
-#    image: grafana/grafana:latest
-#    container_name: grafana
-#    user: "0"
-#    ports:
-#      - "3000:3000"
-#    volumes:
-#      - ./grafana-data:/var/lib/grafana
-#    networks:
-#      - sensor-flow-platform-network
-#    depends_on:
-#      - liquibase-migrations-timescaledb
+  liquibase-migrations-timescaledb:
+    image: liquibase/liquibase:latest
+    command:
+      - --changeLogFile=changelog-master.xml
+      - --searchPath=/liquibase/changelog
+      - --driver=org.postgresql.Driver
+      - --url=jdbc:postgresql://timescaledb:5432/sensor_flow_platform
+      - --username=admin
+      - --password=password
+      - update
+    volumes:
+      - ./migrations/timescaledb:/liquibase/changelog
+    networks:
+      - sensor-flow-platform-network
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    user: "0"
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./grafana-data:/var/lib/grafana
+    networks:
+      - sensor-flow-platform-network
+    depends_on:
+      - liquibase-migrations-timescaledb
 
 
   # ----- postgresql -----
@@ -582,19 +582,21 @@ services:
 
   # ----- device -----
 
-#  device:
-#    image: device:latest
-#    container_name: device
-#    environment:
-#      KAFKA_BOOTSTRAP_SERVERS: "kafka-broker-1:9192,kafka-broker-2:9292,kafka-broker-3:9392"
-#    entrypoint: ["/bin/sh", "-c", "echo 'Initial delay, waiting 15s...'; sleep 15; exec java -jar device-fat.jar"]
-#    networks:
-#      - sensor-flow-platform-network
-#    depends_on:
-#      - kafka-broker-1
-#      - kafka-broker-2
-#      - kafka-broker-3
-#      - kafka-init
+  device:
+    image: device:latest
+    container_name: device
+    environment:
+      DEVICE_ID: device-027
+      KAFKA_BOOTSTRAP_SERVERS: "kafka-broker-1:9192,kafka-broker-2:9292,kafka-broker-3:9392"
+      GENERATION_INTERVAL: 100
+    entrypoint: ["/bin/sh", "-c", "echo 'Initial delay, waiting 15s...'; sleep 15; exec java -jar device-fat.jar"]
+    networks:
+      - sensor-flow-platform-network
+    depends_on:
+      - kafka-broker-1
+      - kafka-broker-2
+      - kafka-broker-3
+      - kafka-init
 
 
 networks:

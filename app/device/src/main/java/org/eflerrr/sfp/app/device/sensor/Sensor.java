@@ -23,7 +23,7 @@ public class Sensor {
     public Metric generateMetric() {
         double value = rangeMinValue + (rangeMaxValue - rangeMinValue) * random.nextDouble();
         return new Metric(
-                deviceId, metricName, value, OffsetDateTime.now(ZoneOffset.UTC).toInstant()
+                deviceId, metricName, value, OffsetDateTime.now(ZoneOffset.UTC)
         );
     }
 }

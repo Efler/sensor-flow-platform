@@ -26,7 +26,12 @@ public class Visualizer {
         Dataset<Row> kafkaStream = spark.readStream()
                 .format("kafka")
                 .option("kafka.bootstrap.servers", "kafka-broker-1:9192,kafka-broker-2:9292,kafka-broker-3:9392")
-                .option("subscribe", "sensors-data")
+                .option("kafka.security.protocol", "SASL_PLAINTEXT")
+                .option("kafka.sasl.mechanism", "PLAIN")
+                .option("kafka.sasl.jaas.config",
+                        "org.apache.kafka.common.security.plain.PlainLoginModule required " +
+                        "username=\"admin\" password=\"admin-pass\";")
+                .option("subscribe", "sensors-data-verified")
                 .option("startingOffsets", "latest")
                 .load();
 

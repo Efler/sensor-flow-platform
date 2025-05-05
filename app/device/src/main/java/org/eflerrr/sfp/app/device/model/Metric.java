@@ -1,8 +1,9 @@
 package org.eflerrr.sfp.app.device.model;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.time.Instant;
+import java.time.OffsetDateTime;
 
 public record Metric(
         @JsonProperty("device_id")
@@ -12,6 +13,7 @@ public record Metric(
         @JsonProperty("metric_value")
         Double metricValue,
         @JsonProperty("src_timestamp")
-        Instant srcTimestamp
+        @JsonFormat(shape = JsonFormat.Shape.STRING)
+        OffsetDateTime srcTimestamp
 ) {
 }
