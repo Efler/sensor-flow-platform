@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-// todo!
 @RestController
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor

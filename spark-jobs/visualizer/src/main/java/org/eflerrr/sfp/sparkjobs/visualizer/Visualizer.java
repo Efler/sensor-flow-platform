@@ -51,7 +51,7 @@ public class Visualizer {
                 .outputMode("append")
                 .trigger(Trigger.ProcessingTime("3 seconds"))
                 .foreachBatch((batchDF, batchId) -> {
-                    batchDF.write()                     // todo! configs
+                    batchDF.write()
                             .format("jdbc")
                             .option("url", "jdbc:postgresql://timescaledb:5432/sensor_flow_platform")
                             .option("dbtable", "sensors_metrics")

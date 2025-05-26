@@ -45,7 +45,7 @@ public class Saver {
         StreamingQuery query = metricsDF.writeStream()
                 .trigger(Trigger.ProcessingTime("10 seconds"))
                 .foreachBatch((batchDF, batchId) -> {
-                    batchDF.write()                     // todo! configs
+                    batchDF.write()
                             .format("parquet")
                             .option("path", "s3a://spark-bucket/sensors-data/")
                             .mode("append")
